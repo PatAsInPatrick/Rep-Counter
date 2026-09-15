@@ -29,7 +29,7 @@
 #define EXTI_MODE_BIT_PER_PIN       (2u)
 
 #define EXTI_DEBOUNCE_MS            (200uL)
-#define EXTI_IRQ_PRIORITY           (1u)
+#define EXTI_IRQ_PRIORITY           (2u)
 #define EXTI_SWITCH_COUNT           (4u)
 
 /* Private variables ---------------------------------------------------------*/

@@ -17,7 +17,7 @@
 
 #define TIM_MMS_UPDATE              (0x2uL << TIM_CR2_MMS_Pos)
 
-#define TIM_TICK_IRQ_PRIORITY       (0u)
+#define TIM_TICK_IRQ_PRIORITY       (1u)
 
 /* Private variables ---------------------------------------------------------*/
 static volatile uint32_t u4g_tickMs = 0u;

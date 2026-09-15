@@ -32,6 +32,7 @@ static uint16_t u2g_angleMax = 0u;
 static uint32_t u4g_timeLiftStart = 0uL;
 static uint32_t u4g_timeTopReached = 0uL;
 static uint16_t u2g_velocityFirst = 0u;
+static uint8_t  u1g_blocked = 0u;
 
 /* Private function prototypes -----------------------------------------------*/
 static void v_repResetRepetition(uint16_t u2_angleDeg);
@@ -165,7 +166,16 @@ static void v_repFinishRepetition(uint32_t u4_timeMs, uint8_t u1_reachedTop)
     }
     stg_result.u2_velocityDps = (uint16_t)u4t_velocity;
 
-    if ((u4t_rom >= (uint32_t)REP_MIN_ROM_DEG) && (u1_reachedTop == 1u))
+    stg_result.u1_blockedFlag = 0u;
+
+    if (u1g_blocked == 1u)
+    {
+        /* the safety supervisor stopped the counter, nothing is recorded */
+        stg_result.u1_validFlag = 0u;
+        stg_result.u1_blockedFlag = 1u;
+        u1g_resultReady = 1u;
+    }
+    else if ((u4t_rom >= (uint32_t)REP_MIN_ROM_DEG) && (u1_reachedTop == 1u))
     {
         stg_result.u1_validFlag = 1u;
         if (stg_result.u1_repCount < (uint8_t)REP_COUNT_MAX)
@@ -213,7 +223,10 @@ static void v_repFinishRepetition(uint32_t u4_timeMs, uint8_t u1_reachedTop)
         v_repUpdateStats();
     }
 
-    u1g_resultReady = 1u;
+    if (u1g_blocked == 0u)
+    {
+        u1g_resultReady = 1u;
+    }
 }
 
 /* Public functions ----------------------------------------------------------*/
@@ -234,6 +247,7 @@ void v_repInit(void)
     stg_result.u2_velocityDps = 0u;
     stg_result.u1_fatigueFlag = 0u;
     stg_result.u1_validFlag = 0u;
+    stg_result.u1_blockedFlag = 0u;
     stg_result.u1_dropPercent = 0u;
     u1g_resultReady = 0u;
     u2g_velocityFirst = 0u;
@@ -296,6 +310,20 @@ void v_repClearFatigue(void)
 }
 
 /*********************************************************************
+ * @fn                - v_repSetBlocked
+ * @brief             - Let the safety supervisor stop or resume counting.
+ *                      While blocked the state machine keeps running so the
+ *                      LEDs still follow the arm, but no repetition is
+ *                      added and no statistic is updated.
+ * @param[in]         - u1_blocked : 1 = stop counting, 0 = count normally
+ * @return            - void
+ *//////////////////////////////////////////////////////////////////////
+void v_repSetBlocked(uint8_t u1_blocked)
+{
+    u1g_blocked = u1_blocked;
+}
+
+/*********************************************************************
  * @fn                - u1_repIsSetActive
  * @brief             - Tell whether a set is running.
  * @return            - uint8_t 1 = running, 0 = idle
@@ -310,6 +338,41 @@ uint8_t u1_repIsSetActive(void)
     }
 
     return u1t_active;
+}
+
+/*********************************************************************
+ * @fn                - v_repAbortCurrent
+ * @brief             - Throw away the repetition that is in progress.
+ *                      Used when the safety lock is released, so that a
+ *                      movement started during the lock is never counted.
+ *                      The arm has to come back down before counting
+ *                      starts again.
+ * @return            - void
+ *//////////////////////////////////////////////////////////////////////
+void v_repAbortCurrent(void)
+{
+    if (stg_state != REP_STATE_IDLE)
+    {
+        stg_state = REP_STATE_WAIT_DOWN;
+        u1g_resultReady = 0u;
+    }
+}
+
+/*********************************************************************
+ * @fn                - u1_repIsTargetReached
+ * @brief             - Tell whether the set has reached the target count.
+ * @return            - uint8_t 1 = the set is complete
+ *//////////////////////////////////////////////////////////////////////
+uint8_t u1_repIsTargetReached(void)
+{
+    uint8_t u1t_done = 0u;
+
+    if (stg_result.u1_repCount >= (uint8_t)REP_TARGET_COUNT)
+    {
+        u1t_done = 1u;
+    }
+
+    return u1t_done;
 }
 
 /*********************************************************************
@@ -397,6 +460,16 @@ void v_repProcessSample(uint16_t u2_angleDeg, uint32_t u4_timeMs)
             else
             {
                 /* still lowering, nothing to do */
+            }
+            break;
+
+        case REP_STATE_WAIT_DOWN:
+            /* a repetition was cancelled, wait for the arm to come back
+             * down before a new one is allowed to start                  */
+            if (u2_angleDeg < (uint16_t)REP_ANGLE_DOWN_DEG)
+            {
+                stg_state = REP_STATE_READY;
+                v_repResetRepetition(u2_angleDeg);
             }
             break;
 

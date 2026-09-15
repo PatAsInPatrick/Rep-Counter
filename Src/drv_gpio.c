@@ -10,6 +10,7 @@
 /* Private define ------------------------------------------------------------*/
 /* --- CHANGE HERE when moving to the shield LEDs / shield switches --------- */
 #define GPIO_ANALOG_PIN             (4u)    /* PA4  : potentiometer ADC1_IN4  */
+#define GPIO_THERMAL_PIN            (0u)    /* PA0  : NTC thermistor ADC1_IN0 */
 /* Shield revision note : if the potentiometer is on PB1 use ADC1_IN9 instead */
 #define GPIO_UART_TX_PIN            (2u)    /* PA2  : USART2_TX               */
 #define GPIO_UART_RX_PIN            (3u)    /* PA3  : USART2_RX               */
@@ -50,7 +51,8 @@ static void v_gpioSetMode(GPIO_TypeDef * pst_port, uint8_t u1_pin, uint8_t u1_mo
 
 /*********************************************************************
  * @fn                - v_gpioAnalogInit
- * @brief             - Configure the potentiometer pin as analog input.
+ * @brief             - Configure the potentiometer pin and the thermistor
+ *                      pin as analog inputs.
  * @return            - void
  *//////////////////////////////////////////////////////////////////////
 void v_gpioAnalogInit(void)
@@ -59,6 +61,10 @@ void v_gpioAnalogInit(void)
 
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
     v_gpioSetMode(GPIOA, (uint8_t)GPIO_ANALOG_PIN, (uint8_t)GPIO_MODE_ANALOG);
+    GPIOA->PUPDR &= ~(GPIO_PUPD_MASK << u4t_shift);
+
+    u4t_shift = (uint32_t)GPIO_THERMAL_PIN * GPIO_MODE_BIT_PER_PIN;
+    v_gpioSetMode(GPIOA, (uint8_t)GPIO_THERMAL_PIN, (uint8_t)GPIO_MODE_ANALOG);
     GPIOA->PUPDR &= ~(GPIO_PUPD_MASK << u4t_shift);
 }
 

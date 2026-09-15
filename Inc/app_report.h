@@ -18,6 +18,10 @@ extern void v_reportBanner(void);
 extern void v_reportSetStarted(void);
 extern void v_reportRepetition(const RepResult_t * pst_result);
 extern void v_reportSetSummary(const RepResult_t * pst_result);
+extern void v_reportSafetyLocked(void);
+extern void v_reportSafetyCleared(void);
+extern void v_reportBlocked(uint8_t u1_blockedCount);
+extern void v_reportOverheat(uint8_t u1_active, int16_t s2_temperatureDeci);
 extern void v_reportPump(void);
 
 #endif /* APP_REPORT_H */

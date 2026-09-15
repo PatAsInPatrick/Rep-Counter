@@ -8,6 +8,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "app_report.h"
 #include "drv_uart.h"
+#include "app_energy.h"
+#include "app_thermal.h"
+#include "app_safety.h"
 
 /* Private define ------------------------------------------------------------*/
 #define REPORT_LINE_LENGTH          (72u)
@@ -227,7 +230,100 @@ void v_reportSetSummary(const RepResult_t * pst_result)
     u2t_index = u2_reportAddText(u1t_line, u2t_index, ",fatigue=");
     u2t_index = u2_reportAddNumber(u1t_line, u2t_index,
                                    (uint16_t)pst_repGetStats()->u1_fatigueCount);
-    u2t_index = u2_reportAddText(u1t_line, u2t_index, "\r\n\r\n");
+    u2t_index = u2_reportAddText(u1t_line, u2t_index, ",kcal=");
+    u2t_index = u2_reportAddNumber(u1t_line, u2t_index,
+                                   (uint16_t)(u2_energyGetKcalX100() / 100u));
+    u2t_index = u2_reportAddText(u1t_line, u2t_index, ".");
+    u2t_index = u2_reportAddNumber(u1t_line, u2t_index,
+                                   (uint16_t)(u2_energyGetKcalX100() % 100u));
+    u2t_index = u2_reportAddText(u1t_line, u2t_index, ",load=");
+    u2t_index = u2_reportAddNumber(u1t_line, u2t_index,
+                                   (uint16_t)(u2_energyGetWeightHg() / 10u));
+    u2t_index = u2_reportAddText(u1t_line, u2t_index, "kg,temp=");
+    u2t_index = u2_reportAddNumber(u1t_line, u2t_index,
+                                   (uint16_t)(s2_thermalGetDeci() / 10));
+    u2t_index = u2_reportAddText(u1t_line, u2t_index, "C\r\n\r\n");
+    v_reportPush(u1t_line, u2t_index);
+}
+
+/*********************************************************************
+ * @fn                - v_reportSafetyLocked
+ * @brief             - Announce that the counter has been locked for safety.
+ * @return            - void
+ *//////////////////////////////////////////////////////////////////////
+void v_reportSafetyLocked(void)
+{
+    uint8_t  u1t_line[REPORT_LINE_LENGTH];
+    uint16_t u2t_index = 0u;
+
+    u2t_index = u2_reportAddText(u1t_line, u2t_index,
+                                 "ALERT,OVERTRAIN,counter locked,rest ");
+    u2t_index = u2_reportAddNumber(u1t_line, u2t_index,
+                                   (uint16_t)SAFETY_REST_SECONDS);
+    u2t_index = u2_reportAddText(u1t_line, u2t_index, " s\r\n");
+    v_reportPush(u1t_line, u2t_index);
+}
+
+/*********************************************************************
+ * @fn                - v_reportSafetyCleared
+ * @brief             - Announce that the user acknowledged the alarm.
+ * @return            - void
+ *//////////////////////////////////////////////////////////////////////
+void v_reportSafetyCleared(void)
+{
+    uint8_t  u1t_line[REPORT_LINE_LENGTH];
+    uint16_t u2t_index = 0u;
+
+    u2t_index = u2_reportAddText(u1t_line, u2t_index,
+                                 "ALERT,CLEARED,counting resumed\r\n");
+    v_reportPush(u1t_line, u2t_index);
+}
+
+/*********************************************************************
+ * @fn                - v_reportBlocked
+ * @brief             - Report a repetition that was refused while locked.
+ * @param[in]         - u1_blockedCount : how many have been refused so far
+ * @return            - void
+ *//////////////////////////////////////////////////////////////////////
+void v_reportBlocked(uint8_t u1_blockedCount)
+{
+    uint8_t  u1t_line[REPORT_LINE_LENGTH];
+    uint16_t u2t_index = 0u;
+
+    u2t_index = u2_reportAddText(u1t_line, u2t_index, "BLOCKED,");
+    u2t_index = u2_reportAddNumber(u1t_line, u2t_index,
+                                   (uint16_t)u1_blockedCount);
+    u2t_index = u2_reportAddText(u1t_line, u2t_index, ",rest first\r\n");
+    v_reportPush(u1t_line, u2t_index);
+}
+
+/*********************************************************************
+ * @fn                - v_reportOverheat
+ * @brief             - Announce that the hardware watchdog stopped or
+ *                      released the training.
+ * @param[in]         - u1_active           : 1 = alarm on, 0 = released
+ * @param[in]         - s2_temperatureDeci  : temperature in tenths
+ * @return            - void
+ *//////////////////////////////////////////////////////////////////////
+void v_reportOverheat(uint8_t u1_active, int16_t s2_temperatureDeci)
+{
+    uint8_t  u1t_line[REPORT_LINE_LENGTH];
+    uint16_t u2t_index = 0u;
+
+    if (u1_active == 1u)
+    {
+        u2t_index = u2_reportAddText(u1t_line, u2t_index,
+                                     "ALERT,OVERHEAT,adc watchdog,temp=");
+    }
+    else
+    {
+        u2t_index = u2_reportAddText(u1t_line, u2t_index,
+                                     "ALERT,COOLED,watchdog armed,temp=");
+    }
+
+    u2t_index = u2_reportAddNumber(u1t_line, u2t_index,
+                                   (uint16_t)(s2_temperatureDeci / 10));
+    u2t_index = u2_reportAddText(u1t_line, u2t_index, "C\r\n");
     v_reportPush(u1t_line, u2t_index);
 }
 

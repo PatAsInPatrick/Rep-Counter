@@ -17,7 +17,12 @@
 extern void v_displayInit(void);
 extern void v_displaySetAngle(uint16_t u2_angleDeg);
 extern void v_displayShowIdle(void);
-extern void v_displayShowRunning(void);
+extern void v_displayShowLocked(uint32_t u4_timeMs);
+extern void v_displayShowOverheat(void);
+extern void v_displayShowRunning(const RepResult_t * pst_result);
+extern void v_displayShowLive(const RepResult_t * pst_result);
+extern void v_displayBack(void);
+extern uint8_t u1_displayIsResultView(void);
 extern void v_displayShowSummary(const RepResult_t * pst_result);
 extern void v_displayShowOverview(void);
 extern void v_displayNextPage(void);

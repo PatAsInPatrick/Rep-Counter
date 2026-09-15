@@ -14,7 +14,7 @@
 #define UART_BRR_115200_AT_16MHZ    (0x8Bu)     /* mantissa 8, fraction 11    */
 #define UART_DMA_CHANNEL_4          (0x4uL << DMA_SxCR_CHSEL_Pos)
 #define UART_DIR_MEM_TO_PERIPH      (0x1uL << DMA_SxCR_DIR_Pos)
-#define UART_DMA_IRQ_PRIORITY       (3u)
+#define UART_DMA_IRQ_PRIORITY       (4u)
 
 /* Private variables ---------------------------------------------------------*/
 static volatile uint8_t u1g_uartBusy = 0u;

@@ -11,6 +11,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 
+/* Public define -------------------------------------------------------------*/
+#define REP_TARGET_COUNT            (10u)   /* one set stops after ten reps   */
+
 /* Public enum ---------------------------------------------------------------*/
 typedef enum
 {
@@ -18,7 +21,8 @@ typedef enum
     REP_STATE_READY,            /* arm is down, waiting for the lift          */
     REP_STATE_CONCENTRIC,       /* lifting up                                 */
     REP_STATE_TOP,              /* top position reached                       */
-    REP_STATE_ECCENTRIC         /* lowering down                              */
+    REP_STATE_ECCENTRIC,        /* lowering down                              */
+    REP_STATE_WAIT_DOWN         /* ignore everything until the arm is down    */
 } RepState_t;
 
 /* Public struct -------------------------------------------------------------*/
@@ -33,6 +37,7 @@ typedef struct
     uint8_t  u1_fatigueFlag;    /* 1 = speed dropped, the athlete is tired    */
     uint8_t  u1_dropPercent;    /* how much slower than the first repetition  */
     uint8_t  u1_validFlag;      /* 1 = the last repetition was counted        */
+    uint8_t  u1_blockedFlag;    /* 1 = refused because the counter is locked  */
 } RepResult_t;
 
 typedef struct
@@ -59,7 +64,10 @@ extern void v_repInit(void);
 extern void v_repStartSet(void);
 extern void v_repStopSet(void);
 extern void v_repClearFatigue(void);
+extern void v_repSetBlocked(uint8_t u1_blocked);
+extern void v_repAbortCurrent(void);
 extern uint8_t u1_repIsSetActive(void);
+extern uint8_t u1_repIsTargetReached(void);
 extern RepState_t st_repGetState(void);
 extern void v_repProcessSample(uint16_t u2_angleDeg, uint32_t u4_timeMs);
 extern uint8_t u1_repIsResultReady(void);
